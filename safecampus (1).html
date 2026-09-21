@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SafeCampus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy-950: #0F1229;
+    --navy-900: #171B3D;
+    --navy-800: #232858;
+    --navy-700: #323870;
+    --amber-500: #E8A94A;
+    --amber-400: #F0BE72;
+    --red-500: #D6473F;
+    --red-600: #B93832;
+    --teal-500: #2A9D7E;
+    --parchment-50: #F6F4EF;
+    --parchment-100: #EDEAE0;
+    --ink-900: #1A1A22;
+    --ink-500: #6B6B78;
+    --line: rgba(23,27,61,0.10);
+    --card-shadow: 0 10px 30px -18px rgba(15,18,41,0.35);
+    color-scheme: light;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--parchment-50);
+    font-family: 'IBM Plex Sans', -apple-system, sans-serif;
+    color: var(--ink-900);
+  }
+  h1, h2, h3, .brand, .display { font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif; }
+
+  .stage {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 28px 16px 40px;
+    gap: 18px;
+  }
+
+  .top-copy { max-width: 420px; text-align: center; }
+  .top-copy .kicker {
+    font-size: 13px;
+    color: var(--amber-500);
+    background: var(--navy-950);
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+  }
+  .top-copy h1 { font-size: 22px; margin: 0 0 6px; color: var(--navy-950); }
+  .top-copy p { margin: 0; color: var(--ink-500); font-size: 14px; line-height: 1.5; }
+
+  /* Phone shell */
+  .phone {
+    width: 100%;
+    max-width: 380px;
+    height: 760px;
+    max-height: 82vh;
+    background: var(--navy-950);
+    border-radius: 40px;
+    padding: 12px;
+    box-shadow: var(--card-shadow), 0 0 0 1px rgba(15,18,41,0.08);
+    position: relative;
+  }
+  .screen {
+    width: 100%;
+    height: 100%;
+    background: var(--parchment-50);
+    border-radius: 30px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .notch {
+    position: absolute;
+    top: 12px; left: 50%; transform: translateX(-50%);
+    width: 90px; height: 20px;
+    background: var(--navy-950);
+    border-radius: 12px;
+    z-index: 30;
+  }
+
+  .view { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; display: none; flex-direction: column; }
+  .view.active { display: flex; }
+  .view::-webkit-scrollbar { width: 0; }
+
+  /* Bottom nav */
+  .tabbar {
+    display: flex;
+    border-top: 1px solid var(--line);
+    background: #fff;
+    padding: 10px 8px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  .tab {
+    flex: 1;
+    background: none; border: none;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    font-family: inherit; font-size: 11px; color: var(--ink-500);
+    padding: 4px 0; cursor: pointer;
+  }
+  .tab svg { width: 20px; height: 20px; stroke: var(--ink-500); fill: none; stroke-width: 1.8; }
+  .tab.active { color: var(--navy-900); font-weight: 600; }
+  .tab.active svg { stroke: var(--navy-900); }
+
+  /* Header bar within screens */
+  .bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 44px 18px 14px;
+    background: var(--parchment-50);
+  }
+  .bar.dark { background: var(--navy-950); color: #fff; }
+  .bar.red { background: var(--red-500); color: #fff; }
+  .bar button.back {
+    background: rgba(15,18,41,0.06); border:none; width:32px; height:32px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color: inherit;
+  }
+  .bar.dark button.back, .bar.red button.back { background: rgba(255,255,255,0.18); }
+  .bar h2 { font-size: 17px; margin: 0; }
+
+  .content { padding: 16px 18px 24px; flex: 1; }
+
+  /* HOME */
+  .greet { display:flex; align-items:center; justify-content:space-between; margin-bottom: 4px; }
+  .greet .who h1 { font-size: 20px; margin:0 0 2px; }
+  .greet .who p { margin:0; font-size:13px; color: var(--ink-500); }
+  .avatar {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--amber-400), var(--red-500));
+    display:flex; align-items:center; justify-content:center; color:#fff; font-weight:600; font-size:15px;
+  }
+
+  .sos-wrap { display:flex; flex-direction:column; align-items:center; margin: 22px 0 24px; }
+  .sos-btn {
+    width: 168px; height: 168px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--red-500), var(--red-600));
+    border: none; color: #fff; cursor: pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    box-shadow: 0 0 0 8px rgba(214,71,63,0.12), 0 18px 30px -12px rgba(214,71,63,0.55);
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  .sos-btn:active { transform: scale(0.97); }
+  .sos-btn .label { font-size: 22px; font-weight: 700; letter-spacing: 0.02em; }
+  .sos-btn .sub { font-size: 11px; opacity: 0.85; font-weight: 500; }
+  .sos-hint { font-size: 12px; color: var(--ink-500); margin-top: 10px; text-align:center; }
+
+  .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
+  .tile {
+    background:#fff; border: 1px solid var(--line); border-radius: 16px;
+    padding: 16px 14px; display:flex; flex-direction:column; gap:10px;
+    cursor:pointer; text-align:left; font-family:inherit;
+  }
+  .tile .ic { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; }
+  .tile span { font-size: 13px; font-weight: 600; color: var(--navy-950); }
+  .tile small { font-size: 11px; color: var(--ink-500); margin-top:-6px; }
+
+  /* EMERGENCY ALERT SCREEN */
+  .alert-body { padding: 16px 18px 24px; }
+  .banner {
+    background: #fff; border-radius: 16px; padding: 16px;
+    box-shadow: var(--card-shadow); margin-bottom: 14px;
+  }
+  .banner .ok { color: var(--teal-500); font-weight:600; font-size:14px; display:flex; align-items:center; gap:6px; margin-bottom:6px;}
+  .banner p { margin:0; font-size:12.5px; color: var(--ink-500); line-height:1.5; }
+  .map-card {
+    border-radius: 16px; overflow:hidden; background:#fff; box-shadow: var(--card-shadow); margin-bottom:14px;
+  }
+  .map-fake {
+    height: 140px;
+    background:
+      repeating-linear-gradient(0deg, rgba(50,56,112,0.06) 0 1px, transparent 1px 26px),
+      repeating-linear-gradient(90deg, rgba(50,56,112,0.06) 0 1px, transparent 1px 26px),
+      var(--parchment-100);
+    position: relative;
+  }
+  .pin {
+    position:absolute; left:50%; top:50%; transform: translate(-50%,-100%);
+    width: 26px; height:26px;
+  }
+  .pin .pulse {
+    position:absolute; inset:-16px; border-radius:50%; background: rgba(214,71,63,0.25);
+    animation: pulse 1.8s infinite ease-out;
+  }
+  @keyframes pulse { 0%{transform:scale(0.4);opacity:0.9} 100%{transform:scale(1.6);opacity:0} }
+  .map-label {
+    display:flex; align-items:center; justify-content:space-between; padding: 10px 14px; font-size: 12px; font-weight:600; color: var(--navy-950);
+  }
+  .fact-row { display:flex; gap:12px; padding: 12px 0; border-top: 1px solid var(--line); }
+  .fact-row:first-of-type { border-top: none; }
+  .fact-row .ic2 { width:30px; height:30px; border-radius:9px; background: var(--parchment-100); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .fact-row .t { font-size: 11.5px; color: var(--ink-500); }
+  .fact-row .v { font-size: 13.5px; font-weight:600; color: var(--navy-950); }
+  .card-block { background:#fff; border-radius:16px; box-shadow: var(--card-shadow); padding: 4px 16px; margin-bottom: 14px; }
+  .priority-high { color: var(--red-500); }
+
+  .cancel-btn {
+    width:100%; padding:14px; border-radius:14px; border:none;
+    background: var(--navy-950); color:#fff; font-weight:600; font-size:14px; cursor:pointer;
+    font-family:inherit; display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+
+  /* AI CHAT */
+  .chat-scroll { flex:1; overflow-y:auto; padding: 14px 16px; display:flex; flex-direction:column; gap:10px; }
+  .msg { max-width: 78%; padding: 10px 13px; border-radius: 16px; font-size: 13.5px; line-height:1.45; }
+  .msg.bot { align-self:flex-start; background:#fff; border:1px solid var(--line); border-bottom-left-radius:4px; }
+  .msg.user { align-self:flex-end; background: var(--navy-950); color:#fff; border-bottom-right-radius:4px; }
+  .analysis {
+    align-self: stretch; background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; margin-top:2px;
+  }
+  .analysis .head { display:flex; align-items:center; gap:8px; font-weight:600; font-size:13px; color: var(--teal-500); margin-bottom:10px; }
+  .analysis .row { display:flex; justify-content:space-between; font-size:12.5px; padding:6px 0; border-top:1px solid var(--line); }
+  .analysis .row:first-of-type { border-top:none; }
+  .analysis .row b { color: var(--navy-950); }
+  .chat-input {
+    display:flex; gap:8px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+    border-top:1px solid var(--line); background:#fff;
+  }
+  .chat-input input {
+    flex:1; border:1px solid var(--line); border-radius:999px; padding:10px 14px; font-size:13.5px; font-family:inherit; outline:none;
+  }
+  .chat-input button {
+    width:38px; height:38px; border-radius:50%; border:none; background: var(--navy-950); color:#fff; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .quick-replies { display:flex; gap:8px; flex-wrap:wrap; padding: 0 16px 10px; }
+  .quick-replies button {
+    font-family:inherit; font-size:12px; border:1px solid var(--line); background:#fff; border-radius:999px; padding:7px 12px; cursor:pointer; color: var(--navy-950);
+  }
+
+  /* CONTACTS */
+  .contact-row {
+    display:flex; align-items:center; gap:12px; padding: 12px 0; border-bottom:1px solid var(--line);
+  }
+  .contact-row .av { width:38px; height:38px; border-radius:50%; background: var(--navy-800); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:13px; flex-shrink:0; }
+  .contact-row .info { flex:1; min-width:0; }
+  .contact-row .info .name { font-size:14px; font-weight:600; color:var(--navy-950); display:flex; align-items:center; gap:6px; }
+  .contact-row .info .num { font-size:12px; color: var(--ink-500); }
+  .badge { font-size:9.5px; background: var(--amber-500); color:#fff; padding:2px 7px; border-radius:999px; font-weight:600; }
+  .switch { position:relative; width:40px; height:23px; flex-shrink:0; }
+  .switch input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; inset:0; background: var(--line); border-radius:999px; cursor:pointer; transition:0.2s; }
+  .slider::before { content:""; position:absolute; width:17px; height:17px; left:3px; top:3px; background:#fff; border-radius:50%; transition:0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.25); }
+  .switch input:checked + .slider { background: var(--teal-500); }
+  .switch input:checked + .slider::before { transform: translateX(17px); }
+  .add-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .add-btn { border:none; background: var(--navy-950); color:#fff; font-family:inherit; font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:999px; cursor:pointer; display:flex; align-items:center; gap:6px; }
+  .empty-note { text-align:center; padding:30px 10px; color: var(--ink-500); font-size:13px; }
+
+  /* HISTORY */
+  .hist-item { display:flex; gap:12px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .hist-item .dot { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .hist-item .title { font-size:13.5px; font-weight:600; color:var(--navy-950); }
+  .hist-item .meta { font-size:11.5px; color: var(--ink-500); margin-top:2px; }
+  .status-pill { font-size:10.5px; font-weight:600; padding:3px 9px; border-radius:999px; height:fit-content; }
+  .status-pill.resolved { background: rgba(42,157,126,0.12); color: var(--teal-500); }
+
+  /* PROFILE */
+  .prof-head { display:flex; align-items:center; gap:14px; padding: 6px 0 20px; }
+  .prof-head .av { width:56px; height:56px; border-radius:50%; background: linear-gradient(135deg, var(--amber-400), var(--red-500)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:19px; }
+  .prof-head h3 { margin:0 0 3px; font-size:16px; }
+  .prof-head p { margin:0; font-size:12px; color: var(--ink-500); }
+  .list-row {
+    display:flex; align-items:center; gap:12px; padding:13px 4px; border-bottom:1px solid var(--line); cursor:pointer; background:none; border-left:none; border-right:none; border-top:none; width:100%; font-family:inherit; text-align:left;
+  }
+  .list-row span { flex:1; font-size:13.5px; font-weight:500; color: var(--navy-950); }
+  .list-row.danger span { color: var(--red-500); }
+
+  /* toast */
+  .toast {
+    position:absolute; left:50%; bottom:90px; transform:translateX(-50%) translateY(10px);
+    background: var(--navy-950); color:#fff; padding:10px 16px; border-radius:999px; font-size:12.5px;
+    opacity:0; pointer-events:none; transition: all 0.25s ease; z-index:40; white-space:nowrap;
+  }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .below-note { max-width: 380px; text-align:center; font-size:12px; color: var(--ink-500); }
+
+  /* LOGIN / SIGNUP */
+  .login-content {
+    flex: 1; display:flex; flex-direction:column; justify-content:center;
+    padding: 30px 26px calc(30px + env(safe-area-inset-bottom,0px));
+  }
+  .login-brand { display:flex; flex-direction:column; align-items:center; margin-bottom:26px; }
+  .login-brand .mark {
+    width:58px; height:58px; border-radius:18px;
+    background: radial-gradient(circle at 35% 30%, var(--red-500), var(--navy-950));
+    display:flex; align-items:center; justify-content:center; margin-bottom:12px;
+    box-shadow: 0 12px 22px -10px rgba(214,71,63,0.5);
+  }
+  .login-brand h1 { font-size:21px; margin:0 0 4px; color: var(--navy-950); }
+  .login-brand p { margin:0; font-size:12.5px; color: var(--ink-500); text-align:center; }
+  .auth-form { display: none; flex-direction:column; }
+  .auth-form.active { display:flex; }
+  .field { margin-bottom:14px; }
+  .field label { font-size:12px; font-weight:600; color: var(--navy-950); margin-bottom:6px; display:block; }
+  .field input {
+    width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line);
+    font-family:inherit; font-size:13.5px; outline:none; background:#fff; color: var(--ink-900);
+  }
+  .field input:focus { border-color: var(--navy-700); }
+  .forgot { text-align:right; font-size:12px; color: var(--ink-500); margin: -6px 0 16px; cursor:pointer; }
+  .err-msg { font-size:12px; color: var(--red-500); margin: -8px 0 12px; display:none; }
+  .err-msg.show { display:block; }
+  .primary-btn {
+    width:100%; padding:14px; border-radius:14px; border:none;
+    background: var(--navy-950); color:#fff; font-weight:600; font-size:14px;
+    cursor:pointer; font-family:inherit; margin-top:2px;
+  }
+  .primary-btn:active { transform: scale(0.98); }
+  .divider { display:flex; align-items:center; gap:10px; margin: 20px 0; color: var(--ink-500); font-size:11.5px; }
+  .divider::before, .divider::after { content:""; flex:1; height:1px; background: var(--line); }
+  .social-row { display:flex; gap:10px; margin-bottom: 6px; }
+  .social-btn {
+    flex:1; padding:11px; border-radius:12px; border:1px solid var(--line); background:#fff;
+    font-family:inherit; font-size:12.5px; font-weight:600; color: var(--navy-950); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .login-alt { text-align:center; font-size:12.5px; color: var(--ink-500); margin-top:18px; }
+  .login-alt a { color: var(--navy-950); font-weight:600; text-decoration:none; cursor:pointer; }
+  .demo-hint { text-align:center; font-size:11px; color: var(--ink-500); margin-top:22px; opacity:0.8; }
+
+  @media (max-width: 420px) {
+    .phone { max-width: 100%; height: 88vh; border-radius: 28px; }
+    .screen { border-radius: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="top-copy">
+    <span class="kicker">Prototype walkthrough</span>
+    <h1>SafeCampus</h1>
+    <p>One tap. One alert. Faster help. Tap SOS on the home screen to see the full emergency flow.</p>
+  </div>
+
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+
+      <!-- LOGIN / SIGNUP -->
+      <div class="view active" id="view-login">
+        <div class="login-content">
+          <div class="login-brand">
+            <div class="mark">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2a7 7 0 0 0-7 7v4l-2 3h18l-2-3v-4a7 7 0 0 0-7-7Z"/><path d="M9 20a3 3 0 0 0 6 0"/></svg>
+            </div>
+            <h1>SafeCampus</h1>
+            <p>Sign in to reach your trusted contacts<br>and campus security, fast.</p>
+          </div>
+
+          <!-- Sign in form -->
+          <div class="auth-form active" id="form-signin">
+            <div class="field">
+              <label for="si-email">Email</label>
+              <input id="si-email" type="email" placeholder="you@college.edu" autocomplete="email">
+            </div>
+            <div class="field">
+              <label for="si-password">Password</label>
+              <input id="si-password" type="password" placeholder="••••••••" autocomplete="current-password">
+            </div>
+            <div class="err-msg" id="si-error">Please enter your email and password.</div>
+            <div class="forgot" onclick="openToast('Password reset link sent (demo)')">Forgot password?</div>
+            <button class="primary-btn" onclick="handleSignIn()">Sign In</button>
+
+            <div class="divider">or continue with</div>
+            <div class="social-row">
+              <button class="social-btn" onclick="openToast('Google sign-in (demo)')">Google</button>
+              <button class="social-btn" onclick="openToast('College SSO (demo)')">College SSO</button>
+            </div>
+
+            <div class="login-alt">New to SafeCampus? <a onclick="toggleAuth('signup')">Create an account</a></div>
+          </div>
+
+          <!-- Sign up form -->
+          <div class="auth-form" id="form-signup">
+            <div class="field">
+              <label for="su-name">Full name</label>
+              <input id="su-name" type="text" placeholder="Karthika Menon" autocomplete="name">
+            </div>
+            <div class="field">
+              <label for="su-email">Email</label>
+              <input id="su-email" type="email" placeholder="you@college.edu" autocomplete="email">
+            </div>
+            <div class="field">
+              <label for="su-password">Password</label>
+              <input id="su-password" type="password" placeholder="Create a password" autocomplete="new-password">
+            </div>
+            <div class="err-msg" id="su-error">Please fill in all fields.</div>
+            <button class="primary-btn" onclick="handleSignUp()">Create Account</button>
+
+            <div class="login-alt">Already have an account? <a onclick="toggleAuth('signin')">Sign in</a></div>
+          </div>
+
+          <p class="demo-hint">Demo only — any email &amp; password will sign you in.</p>
+        </div>
+      </div>
+
+      <!-- HOME -->
+      <div class="view" id="view-home">
+        <div class="content" style="padding-top:44px;">
+          <div class="greet">
+            <div class="who">
+              <h1>Hello, Karthika</h1>
+              <p>Stay safe. Stay connected.</p>
+            </div>
+            <div class="avatar">K</div>
+          </div>
+
+          <div class="sos-wrap">
+            <button class="sos-btn" onclick="triggerSOS()">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2a7 7 0 0 0-7 7v4l-2 3h18l-2-3v-4a7 7 0 0 0-7-7Z"/><path d="M9 20a3 3 0 0 0 6 0"/></svg>
+              <span class="label">SOS</span>
+              <span class="sub">Tap for emergency</span>
+            </button>
+            <p class="sos-hint">Holding this button alerts your trusted<br>contacts and campus security.</p>
+          </div>
+
+          <div class="grid2">
+            <button class="tile" onclick="showView('contacts')">
+              <div class="ic" style="background:rgba(50,56,112,0.10)"><svg width="18" height="18" stroke="#323870" stroke-width="1.8" fill="none"><path d="M9 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M3 16c0-3 3-5 6-5s6 2 6 5"/></svg></div>
+              <span>My Contacts</span>
+            </button>
+            <button class="tile" onclick="openToast('Fetching live GPS location…')">
+              <div class="ic" style="background:rgba(42,157,126,0.10)"><svg width="18" height="18" stroke="#2A9D7E" stroke-width="1.8" fill="none"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg></div>
+              <span>Location</span>
+            </button>
+            <button class="tile" onclick="showView('chat')">
+              <div class="ic" style="background:rgba(232,169,74,0.15)"><svg width="18" height="18" stroke="#E8A94A" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M12 10h.01M15 10h.01"/></svg></div>
+              <span>AI Help</span>
+            </button>
+            <button class="tile" onclick="openToast('Campus security notified you opened this panel.')">
+              <div class="ic" style="background:rgba(214,71,63,0.10)"><svg width="18" height="18" stroke="#D6473F" stroke-width="1.8" fill="none"><path d="M12 3l7 3v5c0 5-3.5 8-7 10-3.5-2-7-5-7-10V6l7-3Z"/></svg></div>
+              <span>Campus Security</span>
+            </button>
+            <button class="tile" onclick="showView('history')">
+              <div class="ic" style="background:rgba(50,56,112,0.10)"><svg width="18" height="18" stroke="#323870" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+              <span>Emergency History</span>
+            </button>
+            <button class="tile" onclick="showView('profile')">
+              <div class="ic" style="background:rgba(107,107,120,0.10)"><svg width="18" height="18" stroke="#6B6B78" stroke-width="1.8" fill="none"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.96 19.3a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.7 8.96a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9.06 4.6 1.7 1.7 0 0 0 10.1 3.04V3a2 2 0 1 1 4 0v.09c0 .68.4 1.29 1.04 1.56.63.26 1.36.12 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87c.27.64.88 1.04 1.56 1.04H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.56 1.04Z"/></svg></div>
+              <span>Settings</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="tabbar">
+          <button class="tab active" data-tab="home" onclick="setTab('home')">
+            <svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>
+            Home
+          </button>
+          <button class="tab" data-tab="contacts" onclick="setTab('contacts')">
+            <svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M3 18c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M17 11c1.7 0 3 1.3 3 3M15 4.5A2.5 2.5 0 0 1 17.5 7"/></svg>
+            Contacts
+          </button>
+          <button class="tab" data-tab="history" onclick="setTab('history')">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+            History
+          </button>
+          <button class="tab" data-tab="profile" onclick="setTab('profile')">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg>
+            Profile
+          </button>
+        </div>
+      </div>
+
+      <!-- EMERGENCY ALERT -->
+      <div class="view" id="view-alert">
+        <div class="bar red">
+          <button class="back" onclick="showView('home')"><svg width="16" height="16" stroke="#fff" fill="none" stroke-width="2"><path d="M10 2 3 8l7 6"/></svg></button>
+          <h2>Emergency Alert</h2>
+        </div>
+        <div class="alert-body">
+          <div class="banner">
+            <div class="ok"><svg width="16" height="16" stroke="#2A9D7E" fill="none" stroke-width="2"><circle cx="8" cy="8" r="7"/><path d="M5 8l2 2 4-4"/></svg> Your SOS has been activated!</div>
+            <p>We've notified your trusted contacts and campus security.</p>
+          </div>
+          <div class="map-card">
+            <div class="map-fake"><div class="pin"><div class="pulse"></div><div style="position:relative;width:26px;height:26px;">📍</div></div></div>
+            <div class="map-label"><span>Live Location</span><a href="#" onclick="event.preventDefault(); openToast('Opening full map view…')" style="color:var(--navy-950);text-decoration:none;">View on Map</a></div>
+          </div>
+          <div class="card-block">
+            <div class="fact-row">
+              <div class="ic2">🩺</div>
+              <div><div class="t">Emergency Type (AI Classification)</div><div class="v">Medical Emergency</div></div>
+            </div>
+            <div class="fact-row">
+              <div class="ic2">📍</div>
+              <div><div class="t">Location</div><div class="v">College Library, Main Block</div></div>
+            </div>
+            <div class="fact-row">
+              <div class="ic2">🕒</div>
+              <div><div class="t">Time</div><div class="v">Today, 09:42 AM</div></div>
+            </div>
+          </div>
+          <button class="cancel-btn" onclick="cancelAlert()">Cancel Alert (<span id="countdown">10</span>s)</button>
+        </div>
+      </div>
+
+      <!-- AI CHAT -->
+      <div class="view" id="view-chat">
+        <div class="bar dark">
+          <button class="back" onclick="showView('home')"><svg width="16" height="16" stroke="#fff" fill="none" stroke-width="2"><path d="M10 2 3 8l7 6"/></svg></button>
+          <h2>AI Emergency Assistant</h2>
+        </div>
+        <div class="chat-scroll" id="chatScroll">
+          <div class="msg bot">Please describe your emergency in a few words.</div>
+        </div>
+        <div class="quick-replies" id="quickReplies">
+          <button onclick="sendMsg('I fell down and can\'t walk')">I fell and can't walk</button>
+          <button onclick="sendMsg('Someone is following me')">Someone is following me</button>
+          <button onclick="sendMsg('I feel unsafe at the hostel')">Unsafe at hostel</button>
+        </div>
+        <div class="chat-input">
+          <input id="chatText" type="text" placeholder="Type a message…" onkeydown="if(event.key==='Enter'){sendMsg(this.value); this.value='';}">
+          <button onclick="const i=document.getElementById('chatText'); sendMsg(i.value); i.value='';">
+            <svg width="16" height="16" fill="#fff"><path d="M1 15l14-7L1 1v5l9 2-9 2z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- CONTACTS -->
+      <div class="view" id="view-contacts">
+        <div class="bar">
+          <button class="back" onclick="showView('home')"><svg width="16" height="16" stroke="#1A1A22" fill="none" stroke-width="2"><path d="M10 2 3 8l7 6"/></svg></button>
+          <h2>Trusted Contacts</h2>
+        </div>
+        <div class="content">
+          <div class="add-row">
+            <p style="margin:0;font-size:12.5px;color:var(--ink-500);">Notified automatically when you send an SOS.</p>
+            <button class="add-btn" onclick="addContact()">+ Add</button>
+          </div>
+          <div id="contactList"></div>
+        </div>
+        <div class="tabbar">
+          <button class="tab" data-tab="home" onclick="setTab('home')"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>Home</button>
+          <button class="tab active" data-tab="contacts" onclick="setTab('contacts')"><svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M3 18c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Contacts</button>
+          <button class="tab" data-tab="history" onclick="setTab('history')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</button>
+          <button class="tab" data-tab="profile" onclick="setTab('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg>Profile</button>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="view" id="view-history">
+        <div class="bar">
+          <button class="back" onclick="showView('home')"><svg width="16" height="16" stroke="#1A1A22" fill="none" stroke-width="2"><path d="M10 2 3 8l7 6"/></svg></button>
+          <h2>Emergency History</h2>
+        </div>
+        <div class="content" id="historyList"></div>
+        <div class="tabbar">
+          <button class="tab" data-tab="home" onclick="setTab('home')"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>Home</button>
+          <button class="tab" data-tab="contacts" onclick="setTab('contacts')"><svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M3 18c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Contacts</button>
+          <button class="tab active" data-tab="history" onclick="setTab('history')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</button>
+          <button class="tab" data-tab="profile" onclick="setTab('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg>Profile</button>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="view" id="view-profile">
+        <div class="content" style="padding-top:44px;">
+          <div class="prof-head">
+            <div class="av">K</div>
+            <div>
+              <h3>Karthika</h3>
+              <p>karthika@email.com</p>
+              <p>+91 98765 43210</p>
+            </div>
+          </div>
+          <button class="list-row" onclick="openToast('Personal information saved.')"><span>Personal Information</span> ›</button>
+          <button class="list-row" onclick="showView('contacts')"><span>Trusted Contacts</span> ›</button>
+          <button class="list-row" onclick="openToast('App settings updated.')"><span>App Settings</span> ›</button>
+          <button class="list-row" onclick="openToast('Support request sent.')"><span>Help &amp; Support</span> ›</button>
+          <button class="list-row danger" onclick="handleLogout()"><span>Logout</span> ›</button>
+        </div>
+        <div class="tabbar">
+          <button class="tab" data-tab="home" onclick="setTab('home')"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg>Home</button>
+          <button class="tab" data-tab="contacts" onclick="setTab('contacts')"><svg viewBox="0 0 24 24"><path d="M9 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M3 18c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>Contacts</button>
+          <button class="tab" data-tab="history" onclick="setTab('history')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>History</button>
+          <button class="tab active" data-tab="profile" onclick="setTab('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg>Profile</button>
+        </div>
+      </div>
+
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <p class="below-note">Demo data only — no real alerts, contacts, or locations are sent. State is kept in your browser for this session.</p>
+</div>
+
+<script>
+  var STORE_KEY = 'safecampus_demo_v1';
+
+  var defaultData = {
+    contacts: [
+      { name: 'Mom', phone: '+91 98765 43210', primary: true, notify: true },
+      { name: 'Dad', phone: '+91 98765 67890', primary: false, notify: true },
+      { name: 'Friend (Sneha)', phone: '+91 91234 56789', primary: false, notify: true },
+      { name: 'Hostel Warden', phone: '+91 99887 76655', primary: false, notify: false }
+    ],
+    history: [
+      { type: 'Medical Emergency', date: 'Apr 12, 2026', time: '09:42 AM', place: 'College Library', color: '#D6473F', bg: 'rgba(214,71,63,0.10)' },
+      { type: 'Safety Emergency', date: 'Apr 10, 2026', time: '08:15 PM', place: 'Near Canteen', color: '#E8A94A', bg: 'rgba(232,169,74,0.15)' },
+      { type: 'Security Emergency', date: 'Apr 5, 2026', time: '06:30 AM', place: 'Main Gate', color: '#323870', bg: 'rgba(50,56,112,0.10)' }
+    ]
+  };
+
+  var data = loadData();
+
+  function loadData() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) { /* storage unavailable, fall back to defaults */ }
+    return JSON.parse(JSON.stringify(defaultData));
+  }
+
+  function saveData() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); } catch (e) { /* ignore */ }
+  }
+
+  function initials(name) {
+    return name.split(' ').map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase();
+  }
+
+  function renderContacts() {
+    var list = document.getElementById('contactList');
+    if (!data.contacts.length) {
+      list.innerHTML = '<div class="empty-note">No trusted contacts yet. Add someone who should be alerted in an emergency.</div>';
+      return;
+    }
+    list.innerHTML = data.contacts.map(function(c, i) {
+      return '<div class="contact-row">' +
+        '<div class="av">' + initials(c.name) + '</div>' +
+        '<div class="info"><div class="name">' + c.name + (c.primary ? ' <span class="badge">Primary</span>' : '') + '</div>' +
+        '<div class="num">' + c.phone + '</div></div>' +
+        '<label class="switch"><input type="checkbox" ' + (c.notify ? 'checked' : '') + ' onchange="toggleContact(' + i + ')"><span class="slider"></span></label>' +
+        '</div>';
+    }).join('');
+  }
+
+  function toggleContact(i) {
+    data.contacts[i].notify = !data.contacts[i].notify;
+    saveData();
+    openToast(data.contacts[i].notify ? data.contacts[i].name + ' will be notified' : data.contacts[i].name + ' notifications off');
+  }
+
+  function addContact() {
+    var name = prompt('Contact name:');
+    if (!name) return;
+    var phone = prompt('Phone number:') || '—';
+    data.contacts.push({ name: name, phone: phone, primary: false, notify: true });
+    saveData();
+    renderContacts();
+    openToast(name + ' added to trusted contacts');
+  }
+
+  function renderHistory() {
+    var list = document.getElementById('historyList');
+    if (!data.history.length) {
+      list.innerHTML = '<div class="empty-note">No past alerts. Your emergency history will show up here.</div>';
+      return;
+    }
+    list.innerHTML = data.history.map(function(h) {
+      return '<div class="hist-item">' +
+        '<div class="dot" style="background:' + h.bg + '">🔔</div>' +
+        '<div style="flex:1;">' +
+          '<div class="title">' + h.type + '</div>' +
+          '<div class="meta">' + h.date + ' &nbsp;|&nbsp; ' + h.time + '<br>' + h.place + '</div>' +
+        '</div>' +
+        '<div class="status-pill resolved">Resolved</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // ---- Auth ----
+  function toggleAuth(mode) {
+    document.getElementById('form-signin').classList.toggle('active', mode === 'signin');
+    document.getElementById('form-signup').classList.toggle('active', mode === 'signup');
+    document.getElementById('si-error').classList.remove('show');
+    document.getElementById('su-error').classList.remove('show');
+  }
+
+  function handleSignIn() {
+    var email = document.getElementById('si-email').value.trim();
+    var password = document.getElementById('si-password').value.trim();
+    var err = document.getElementById('si-error');
+    if (!email || !password) {
+      err.classList.add('show');
+      return;
+    }
+    err.classList.remove('show');
+    setTab('home');
+    openToast('Welcome back!');
+  }
+
+  function handleSignUp() {
+    var name = document.getElementById('su-name').value.trim();
+    var email = document.getElementById('su-email').value.trim();
+    var password = document.getElementById('su-password').value.trim();
+    var err = document.getElementById('su-error');
+    if (!name || !email || !password) {
+      err.classList.add('show');
+      return;
+    }
+    err.classList.remove('show');
+    setTab('home');
+    openToast('Account created — welcome, ' + name.split(' ')[0] + '!');
+  }
+
+  function handleLogout() {
+    document.getElementById('si-email').value = '';
+    document.getElementById('si-password').value = '';
+    toggleAuth('signin');
+    showView('login');
+    openToast('Logged out.');
+  }
+
+  // ---- Navigation ----
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(function(v){ v.classList.remove('active'); });
+    document.getElementById('view-' + name).classList.add('active');
+  }
+  function setTab(name) {
+    showView(name);
+    document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.tab === name); });
+  }
+
+  // ---- SOS flow ----
+  var countdownTimer = null;
+  function triggerSOS() {
+    showView('alert');
+    var secs = 10;
+    document.getElementById('countdown').textContent = secs;
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(function() {
+      secs -= 1;
+      if (secs <= 0) {
+        clearInterval(countdownTimer);
+        document.getElementById('countdown').textContent = 0;
+        openToast('Alert sent to contacts & campus security');
+        data.history.unshift({
+          type: 'Medical Emergency', date: 'Today', time: nowTime(), place: 'College Library, Main Block',
+          color: '#D6473F', bg: 'rgba(214,71,63,0.10)'
+        });
+        saveData();
+        return;
+      }
+      document.getElementById('countdown').textContent = secs;
+    }, 1000);
+  }
+  function cancelAlert() {
+    clearInterval(countdownTimer);
+    showView('home');
+    openToast('Alert cancelled');
+  }
+  function nowTime() {
+    var d = new Date();
+    var h = d.getHours(), m = d.getMinutes();
+    var ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12; if (h === 0) h = 12;
+    return (h < 10 ? '0'+h : h) + ':' + (m < 10 ? '0'+m : m) + ' ' + ap;
+  }
+
+  // ---- AI chat ----
+  function classify(text) {
+    var t = text.toLowerCase();
+    if (t.indexOf('fall') > -1 || t.indexOf('fell') > -1 || t.indexOf('hurt') > -1 || t.indexOf('walk') > -1 || t.indexOf('pain') > -1) {
+      return { type: 'Medical Emergency', priority: 'High', action: 'Send medical help + inform trusted contacts' };
+    }
+    if (t.indexOf('follow') > -1 || t.indexOf('stalk') > -1 || t.indexOf('threat') > -1) {
+      return { type: 'Personal Safety Threat', priority: 'High', action: 'Alert campus security + share live location' };
+    }
+    if (t.indexOf('unsafe') > -1 || t.indexOf('hostel') > -1 || t.indexOf('scared') > -1) {
+      return { type: 'Safety Concern', priority: 'Medium', action: 'Notify hostel warden + trusted contacts' };
+    }
+    return { type: 'General Emergency', priority: 'Medium', action: 'Notify trusted contacts for check-in' };
+  }
+
+  function sendMsg(text) {
+    text = (text || '').trim();
+    if (!text) return;
+    var scroll = document.getElementById('chatScroll');
+    var userMsg = document.createElement('div');
+    userMsg.className = 'msg user';
+    userMsg.textContent = text;
+    scroll.appendChild(userMsg);
+    document.getElementById('quickReplies').style.display = 'none';
+
+    var thinking = document.createElement('div');
+    thinking.className = 'msg bot';
+    thinking.textContent = 'Analyzing…';
+    scroll.appendChild(thinking);
+    scroll.scrollTop = scroll.scrollHeight;
+
+    setTimeout(function() {
+      thinking.remove();
+      var result = classify(text);
+      var block = document.createElement('div');
+      block.className = 'analysis';
+      block.innerHTML = '<div class="head">✅ AI Analysis Complete</div>' +
+        '<div class="row"><span>Emergency Type</span><b>' + result.type + '</b></div>' +
+        '<div class="row"><span>Priority</span><b style="color:' + (result.priority === 'High' ? 'var(--red-500)' : 'var(--amber-500)') + '">' + result.priority + '</b></div>' +
+        '<div class="row"><span>Suggested Response</span><b>' + result.action + '</b></div>';
+      scroll.appendChild(block);
+      scroll.scrollTop = scroll.scrollHeight;
+    }, 700);
+  }
+
+  // ---- Toast ----
+  var toastTimer = null;
+  function openToast(msg) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+
+  renderContacts();
+  renderHistory();
+</script>
+</body>
+</html>
